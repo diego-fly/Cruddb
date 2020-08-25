@@ -21,7 +21,7 @@ app.get('/task', function (req, res) {
                         'data' : []
                     });
                 }
-                else if (!taskDB){
+                else if (!taskList){
                     return res.json({
                         'success': false,
                         'message' : 'this task not is found',
@@ -43,15 +43,14 @@ app.post('/task', function (req, res) {
         title: data.title,
         description: data.description,
         image_url: data.image_url,
-        active: true,
-        created_at: Date()
+        
     });
 
     task.save( (err, taskDB) => {
         if(err){
             return res.status(400).json({
                 'success': false,
-                'message' : err,
+                'message' : err.message,
                 'data' : []
             });
         }
@@ -75,7 +74,7 @@ app.get('/task/:id', function (req, res) {
                         'data' : []
                     });
                 }
-                else if (!taskDB){
+                if (!taskDetail){
                     return res.json({
                         'success': false,
                         'message' : 'this task not is found',
@@ -89,23 +88,19 @@ app.get('/task/:id', function (req, res) {
                 })
             });
 });
-
+//Actualizar imf
 app.put('/task/:id', function (req, res) {
     let id = req.params.id;
-    let data = {title : title, description : description,active:false };
-   
-    if(!taskDB){
-        return res.json({
-            'success': false,
-            'message' : 'this task not is found, friend',
-            'data' : []   
-        });
-    }
-    Task.findByIdAndUpdate(id, data, {new : true,  runValidators: true}, (err, taskDB) => {
+    let data=req.body;
+     const{title,description}=data;
+ // es para que no aparezca la imagen si no esos dos nada mas
+   let update = { title,description };
+
+    Task.findByIdAndUpdate(id, update, {new : true,  runValidators: true}, (err, taskDB) => {
         if(err){
             return res.status(400).json({
                 'success': false,
-                'message' : err,
+                'message' : err.message,
                 'data' : []
             });
         }
@@ -116,10 +111,50 @@ app.put('/task/:id', function (req, res) {
         })
     });
 });
+// es para mostrar si esta activo o si no esta activo
 app.delete('/task/:id', function (req, res) {
     let id = req.params.id;
-    let data = { active : false };
-    Task.findByIdAndDelete(id, data, {new : false,  runValidators: true}, (err, taskDB) => {       
+    Task.findById(id)
+            .exec( (err, taskDetail) => {
+                if(err){
+                    return res.status(400).json({
+                        'success': false,
+                        'message' : 'No se encuentra nadita de lo que dices mi bro',
+                        'data' : []
+                  });
+                }
+                ( taskDetail.active ? actualizarestado( true, id, res ) : actualizarestado ( false, id, res ) );
+            });   
+            });
+
+const actualizando = ( estado, id, res ) => {
+     let data = { active : ( estado ? false : true ) };
+         Task.findByIdAndUpdate(id, data, {new : false,  runValidators: true}, (err, taskDB) => {
+             if(err){
+               return res.status(400).json({
+                'success': false,
+                'message' : err.message,
+                'data' : []
+                        });
+                }
+                    if(!taskDB){
+                        return res.json({
+                            'success': true,
+                            'message' : 'the status de la task update susesfully',
+                            'data' : [taskDB]
+                        });
+                    }
+                    return res.json({
+                        'success': false,
+                        'message' : 'the task not found, friend',
+                        'data' : []
+                    })
+                });
+            }       
+// aqui si ya eliminado seriamente la tarea
+     app.delete('/task/:id', function (req, res) {
+     let id = req.params.id;
+     Task.findByIdAndDelete(id, (err, taskDB) => {             
         if(err){
             return res.status(400).json({
                 'success': false,
@@ -127,7 +162,7 @@ app.delete('/task/:id', function (req, res) {
                 'data' : []
             });
         }
-        if(!id){
+        if(!taskDB){
             return res.status(400).json({
                 'success': false,
                 'message' : 'Task doesnt found, my bro',
