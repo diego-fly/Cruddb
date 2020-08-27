@@ -123,12 +123,11 @@ app.delete('/task/:id', function (req, res) {
                         'data' : []
                   });
                 }
-                ( taskDetail.active ? actualizarestado( true, id, res ) : actualizarestado ( false, id, res ) );
+                ( taskDetail.active ? actualizarestado( false, id, res ) : actualizarestado ( true, id, res ) );
             });   
             });
 
 const actualizando = ( estado, id, res ) => {
-     let data = { active : ( estado ? false : true ) };
          Task.findByIdAndUpdate(id, data, {new : false,  runValidators: true}, (err, taskDB) => {
              if(err){
                return res.status(400).json({
